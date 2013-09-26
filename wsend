@@ -1,0 +1,38 @@
+#!/usr/bin/env node
+
+var program = require('commander');
+
+var wsend = require('./wsend.js');
+
+wsend.checkInstall();
+program
+  .version('0.0.1')
+  .option('-l, --login', 'Login')
+  .option('-r, --register', 'Register')
+  .option('-R, --refer', 'Refer')
+  .option('-L, --refer-link', 'Refer Link')
+  .parse(process.argv);
+
+if (program.login) {
+  wsend.login();
+} else if (program.register) {
+  console.log('register');
+} else {
+  if (process.argv[2]) {
+    console.log('the file that will be uploaded here is: ');
+    console.log(process.argv[2]);
+  } else {
+    
+    console.error("\033[01;31m");
+    console.error('error:   ');
+    console.error('error:   Usage: '+process.argv[1]+' [-l|--login] [-r|--register]');
+    console.error('error:   Usage: [--refer friend@example.com]');
+    console.error('error:   Usage: [--refer-link]');
+    console.error('error:   or send a file, example:');
+    console.error('error:   '+process.argv[1]+' file.txt');
+    console.error('error:   ');
+    console.error("\033[00m");
+  }
+
+}
+
