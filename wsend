@@ -5,6 +5,7 @@ var program = require('commander');
 var wsend = require('./wsend.js');
 
 wsend.checkInstall();
+
 program
   .version('0.0.1')
   .option('-l, --login', 'Login')
@@ -16,7 +17,9 @@ program
 if (program.login) {
   wsend.login();
 } else if (program.register) {
-  console.log('register');
+  wsend.register();
+} else if (program.refer) { 
+  wsend.refer();
 } else {
   if (process.argv[2]) {
     console.log('the file that will be uploaded here is: ');

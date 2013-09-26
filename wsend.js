@@ -61,6 +61,21 @@ function unregisteredSignUp() {
   );
 }
 
+function installFirstTime() {
+  console.error('\033[01;36m');
+  console.error('info:    ');
+  console.error('info:    Installing and signing up for the first time');
+  console.error('info:    with an unregistered account');
+  console.error('info:    if you already have an account you can log in with:');
+  console.error('info:    ');
+  console.error('info:    wsend --login');
+  console.error('info:    ');
+  console.error('info:    your transfer will continue');
+  console.error('info:    ');
+  console.error('\033[00m');
+  unregisteredSignUp();
+}
+  
 
 var checkInstall = function() {
   var exists = fs.existsSync(WSEND_DIR);
@@ -95,6 +110,7 @@ var checkInstall = function() {
 
     // directory doesn't exist and should be installed
     fs.mkdirSync(process.env.HOME+'/.wsend/', 0755);
+    installFirstTime();
   }
 };
 
@@ -138,5 +154,94 @@ var login = function() {
   }
 };
 
+var register = function() {
+  console.error('\033[01;36m');
+  console.error('info:    enter email and password to register');
+  console.error('\033[00m');
+  var idExists = fs.existsSync(WSEND_DIR+'/.id');
+
+  if (idExists) {
+    var id = fs.readFileSync(WSEND_DIR+'/.id');
+  } else {
+    //installFirstTime();
+    //var id = fs.readFileSync(WSEND_DIR+'/.id');
+    //console.log('id from register function created: ' +id);
+  }
+    
+  var properties = [
+    {
+      name: 'email'
+    },
+    {
+      name: 'password',
+      hidden: true
+    }
+  ];
+  
+  prompt.start();
+
+  prompt.get(properties, function (err, result) {
+    if (err) { return onErr(err); }
+    if (idExists) {
+      request.post(
+          HOST+'/register_cli', {
+            form: { uid: id,
+                    email: result.email,
+                    password: result.password
+                  }
+          },
+          function (error, response, body) {
+            if(!error && response.statusCode == 200) {
+              console.error('\033[01;36m');
+              console.error('info:    message from server:');
+              console.error('info:    '+body+'\n');
+              console.error('\033[00m');
+            }
+          }
+      );
+    } else {
+      request.post(
+        HOST+'/createunreg', {
+          form: { start: 1 }
+        },
+        function (error, response, body) {
+          if(!error && response.statusCode == 200) {
+            fs.writeFileSync(WSEND_DIR+'/.id', body);
+            var id = body;
+            request.post(
+                HOST+'/register_cli', {
+                  form: { uid: id,
+                          email: result.email,
+                          password: result.password
+                        }
+                },
+                function (error, response, body) {
+                  if(!error && response.statusCode == 200) {
+                    console.error('\033[01;36m');
+                    console.error('info:    message from server:');
+                    console.error('info:    '+body+'\n');
+                    console.error('\033[00m');
+                  }
+                }
+            );
+
+          }
+        }
+      );
+    }
+  });
+
+  function onErr(err) {
+    console.log(err);
+    return 1;
+  }
+};
+
+var refer = function() {
+
+};
+
 exports.login = login;
 exports.checkInstall = checkInstall;
+exports.register = register;
+exports.refer = refer;
