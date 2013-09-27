@@ -11,7 +11,7 @@ program
   .option('-l, --login', 'Login')
   .option('-r, --register', 'Register')
   .option('-R, --refer', 'Refer')
-  .option('-L, --refer-link', 'Refer Link')
+  .option('-L, --referlink', 'Refer Link')
   .parse(process.argv);
 
 if (program.login) {
@@ -19,7 +19,9 @@ if (program.login) {
 } else if (program.register) {
   wsend.register();
 } else if (program.refer) { 
-  wsend.refer(process.argv[2]);
+  wsend.refer(process.argv[3]);
+} else if (program.referlink) { 
+  wsend.referLink();
 } else {
   if (process.argv[2]) {
     console.log('the file that will be uploaded here is: ');

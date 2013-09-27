@@ -84,7 +84,7 @@ var checkInstall = function() {
     // directory exists, check to see if user is registered
     var idExists = fs.existsSync(WSEND_DIR+'/.id');
     if (idExists) {
-      var id = fs.readFileSync(WSEND_DIR+'/.id');
+      var id = fs.readFileSync(WSEND_DIR+'/.id').toString().replace(/(\r\n|\n|\r)/gm,"");
       request.post(
         HOST+'/usertype', {
           form: { uid: id }
@@ -162,11 +162,9 @@ var register = function() {
   
   // if there is an id get the id
   if (idExists) {
-    var id = fs.readFileSync(WSEND_DIR+'/.id');
+    var id = fs.readFileSync(WSEND_DIR+'/.id').toString().replace(/(\r\n|\n|\r)/gm,"");
   } else {
     //installFirstTime();
-    //var id = fs.readFileSync(WSEND_DIR+'/.id');
-    //console.log('id from register function created: ' +id);
   }
     
   var properties = [
@@ -245,7 +243,7 @@ var register = function() {
 };
 
 var refer = function(email) {
-  var id = fs.readFileSync(WSEND_DIR+'/.id');
+  var id = fs.readFileSync(WSEND_DIR+'/.id').toString().replace(/(\r\n|\n|\r)/gm,"");
   request.post(
     HOST+'/usertype', {
       form: { uid: id }
@@ -253,10 +251,11 @@ var refer = function(email) {
     function (error, response, body) {
       if(!error && response.statusCode == 200) {
         var userType = body;
-        if (userType !== 'unregistered' && userType !== 'unknown') {
+        if (userType === 'free' || userType === 'paid') {
           console.error('\033[01;36m');
           console.error('info:    referring a friend');
           console.error('\033[00m');
+
           request.post(
               HOST+'/refer_cli', {
                 form: { email: email,
@@ -289,7 +288,45 @@ var refer = function(email) {
 
 };
 
+var referLink = function() {
+  var id = fs.readFileSync(WSEND_DIR+'/.id').toString().replace(/(\r\n|\n|\r)/gm,"");
+  request.post(
+    HOST+'/usertype', {
+      form: { uid: id }
+    },
+    function (error, response, body) {
+      if(!error && response.statusCode == 200) {
+        var userType = body;
+        if (userType === 'free' || userType === 'paid') {
+          console.error('\033[01;36m');
+          console.error('info:    getting referral link');
+          console.error('\033[00m');
+
+          request.post(
+              HOST+'/referlink_cli', {
+                form: { id: id
+                      }
+              },
+              function (error, response, body) {
+                if(!error && response.statusCode == 200) {
+                  console.log(body);
+                }
+              }
+          );
+
+        } else {
+          console.error('\033[01;31m');
+          console.error('error:   referrals available to registered accounts');
+          console.error('\033[00m');
+        }
+      }
+    }
+  );
+  
+};
+
 exports.login = login;
 exports.checkInstall = checkInstall;
 exports.register = register;
 exports.refer = refer;
+exports.referLink = referLink;
