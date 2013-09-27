@@ -159,7 +159,8 @@ var register = function() {
   console.error('info:    enter email and password to register');
   console.error('\033[00m');
   var idExists = fs.existsSync(WSEND_DIR+'/.id');
-
+  
+  // if there is an id get the id
   if (idExists) {
     var id = fs.readFileSync(WSEND_DIR+'/.id');
   } else {
@@ -182,6 +183,9 @@ var register = function() {
 
   prompt.get(properties, function (err, result) {
     if (err) { return onErr(err); }
+
+    // if there is an id use the id that was
+    // previously gotten
     if (idExists) {
       request.post(
           HOST+'/register_cli', {
@@ -200,6 +204,9 @@ var register = function() {
           }
       );
     } else {
+      // otherwise get an id and then register with that
+      // id.  Needed because of the asynchronous nature
+      // of node
       request.post(
         HOST+'/createunreg', {
           form: { start: 1 }
@@ -237,7 +244,48 @@ var register = function() {
   }
 };
 
-var refer = function() {
+var refer = function(email) {
+  var id = fs.readFileSync(WSEND_DIR+'/.id');
+  request.post(
+    HOST+'/usertype', {
+      form: { uid: id }
+    },
+    function (error, response, body) {
+      if(!error && response.statusCode == 200) {
+        var userType = body;
+        if (userType !== 'unregistered' && userType !== 'unknown') {
+          console.error('\033[01;36m');
+          console.error('info:    referring a friend');
+          console.error('\033[00m');
+          request.post(
+              HOST+'/refer_cli', {
+                form: { email: email,
+                        id: id
+                      }
+              },
+              function (error, response, body) {
+                if(!error && response.statusCode == 200) {
+                  if (body === "success") {
+                    console.error('\033[01;36m');
+                    console.error('info:    friend referred successfully');
+                    console.error('\033[00m');
+                  } else {
+                    console.error('\033[01;31m');
+                    console.error('error:   something went wrong with the referral process');
+                    console.error('\033[00m');
+                  }
+                }
+              }
+          );
+
+        } else {
+          console.error('\033[01;31m');
+          console.error('error:   referrals available to registered accounts');
+          console.error('\033[00m');
+        }
+      }
+    }
+  );
 
 };
 

@@ -19,7 +19,7 @@ if (program.login) {
 } else if (program.register) {
   wsend.register();
 } else if (program.refer) { 
-  wsend.refer();
+  wsend.refer(process.argv[2]);
 } else {
   if (process.argv[2]) {
     console.log('the file that will be uploaded here is: ');
