@@ -16,7 +16,7 @@ var i=0;
 var j=0;
 var reset = 0;
 var nextPiece=1;
-var steps = 12;
+var steps = 10;
 var counter = 0;
 
 function freeInfoMessage() {
