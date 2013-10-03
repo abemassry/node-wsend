@@ -434,7 +434,7 @@ var sendFile = function(file) {
                           function output() {
                             process.nextTick(function() {
                               c++;
-                              if (parseInt(size) > 200) {
+                              if (parseInt(size) > minProgressSize) {
                                 if (counter < parseInt(size)) {
                                   for (var k = 0; k < steps; k++){
                                     pace.op();
