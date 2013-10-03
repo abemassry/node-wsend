@@ -462,7 +462,11 @@ var sendFile = function(file) {
                           });
                         });
 
-                        form.pipe(tr);
+                        if (parseInt(size) > minProgressSize) {
+                          form.pipe(tr);
+                        } else {
+                          form.pipe(request);
+                        }
 
                         //
                         // end of file upload
@@ -563,7 +567,11 @@ var sendFile = function(file) {
                           });
                         });
 
-                        form.pipe(tr);
+                        if (parseInt(size) > minProgressSize) {
+                          form.pipe(tr);
+                        } else {
+                          form.pipe(request);
+                        }
 
                         //
                         // end of file upload
@@ -669,7 +677,11 @@ var sendFile = function(file) {
                           });
                         });
 
-                        form.pipe(tr);
+                        if (parseInt(size) > minProgressSize) {
+                          form.pipe(tr);
+                        } else {
+                          form.pipe(request);
+                        }
 
                         //
                         // end of file upload
