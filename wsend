@@ -4,7 +4,7 @@ var program = require('commander');
 
 var wsend = require('./wsend.js');
 
-wsend.checkInstall();
+//wsend.checkInstall();
 
 program
   .version('0.0.1')

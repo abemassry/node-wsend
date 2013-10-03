@@ -359,169 +359,587 @@ var referLink = function() {
 };
 
 var sendFile = function(file) {
-  var size = util.inspect(fs.statSync(file).size);
-  var id = fs.readFileSync(WSEND_DIR+'/.id').toString().replace(/(\r\n|\n|\r)/gm,"");
-  // 
-  // start request for user space avaliable
-  //
-  request.post(
-    HOST+'/userspaceavailable', {
-      form: { uid: id,
-              size: size
-            }
-    },
-    function (error, response, body) {
-      if(!error && response.statusCode == 200) {
-        var accountSizeAvailable = body;
-  // 
-  // end of request for user space available
-  //
-          if (accountSizeAvailable === 'not enough space in your account for this transfer') {
-            notEnoughSpaceErr();
-          } else if(accountSizeAvailable === 'file is too big for your account size') { 
-              filesizeTooLarge();
-          } else {
-              // 
-              // start of file upload
-              //
+  var exists = fs.existsSync(WSEND_DIR);
+  if (exists) {
 
-              var form = new FormData();
-              var pace = require('pace')(parseInt(size));
-
-              var i=0;
-              var j=0;
-              var reset = 0;
-              var nextPiece=1;
-              var steps = 12;
-              var counter = 0;
-
-              form.append('uid', id);
-              form.append('filehandle', fs.createReadStream(file));
-
-              var request = https.request({
-                method: 'post',
-                hostname: 'wsend.net',
-                port: 443,
-                path: '/upload_cli',
-                headers: form.getHeaders()
-              });
-                
-              var tr = through(function (chunk) {
-                this.queue(chunk);
-                i++;
-                var c = 0;
-                function output() {
-                  process.nextTick(function() {
-                    c++;
-                    if (parseInt(size) > 200) {
-                      if (counter < parseInt(size)) {
-                        for (var k = 0; k < steps; k++){
-                          pace.op();
-                          counter++;
+    // directory exists, check to see if user is registered
+    var idExists = fs.existsSync(WSEND_DIR+'/.id');
+    if (idExists) {
+      var size = util.inspect(fs.statSync(file).size);
+      var id = fs.readFileSync(WSEND_DIR+'/.id').toString().replace(/(\r\n|\n|\r)/gm,"");
+      // 
+      // start request for user space avaliable
+      //
+      request.post(
+        HOST+'/userspaceavailable', {
+          form: { uid: id,
+                  size: size
+                }
+        },
+        function (error, response, body) {
+          if(!error && response.statusCode == 200) {
+            var accountSizeAvailable = body;
+      // 
+      // end of request for user space available
+      //
+              if (accountSizeAvailable === 'not enough space in your account for this transfer') {
+                notEnoughSpaceErr();
+              } else if(accountSizeAvailable === 'file is too big for your account size') { 
+                  filesizeTooLarge();
+              } else {
+                  request.post(
+                    HOST+'/usertype', {
+                      form: { uid: id }
+                    },
+                    function (error, response, body) {
+                      if(!error && response.statusCode == 200) {
+                        var userType = body;
+                        if (userType === 'free') {
+                          freeInfoMessage();
+                        } else if (userType === 'unregistered') {
+                          registerInfoMessage();
+                        } else if (userType === 'unknown') {
+                          unregisteredSignUp();
                         }
+                        // 
+                        // start of file upload
+                        //
+
+                        var form = new FormData();
+                        var pace = require('pace')(parseInt(size));
+
+                        var i=0;
+                        var j=0;
+                        var reset = 0;
+                        var nextPiece=1;
+                        var steps = 12;
+                        var counter = 0;
+
+                        form.append('uid', id);
+                        form.append('filehandle', fs.createReadStream(file));
+
+                        var request = https.request({
+                          method: 'post',
+                          hostname: 'wsend.net',
+                          port: 443,
+                          path: '/upload_cli',
+                          headers: form.getHeaders()
+                        });
+                          
+                        var tr = through(function (chunk) {
+                          this.queue(chunk);
+                          i++;
+                          var c = 0;
+                          function output() {
+                            process.nextTick(function() {
+                              c++;
+                              if (parseInt(size) > 200) {
+                                if (counter < parseInt(size)) {
+                                  for (var k = 0; k < steps; k++){
+                                    pace.op();
+                                    counter++;
+                                  }
+                                }
+                              }
+                              request.write(chunk, function(){
+                                output();
+                              });
+                            });
+                          }
+                          if (c === 0) {
+                            output();
+                          }
+                        });
+
+                        request.on('response', function(res) {
+                          //res.setMaxListeners(0);
+                          res.on('data', function(chunk){
+                            pace.op(size);
+                            console.error(' ');
+                            console.log(chunk.toString());
+                            process.exit(0);
+                          });
+                        });
+
+                        form.pipe(tr);
+
+                        //
+                        // end of file upload
+                        //
                       }
                     }
-                    request.write(chunk, function(){
-                      output();
-                    });
-                  });
+                  );
+
+              }
+
+          } else { // end of user space available brace
+            console.log('the error is: '+error);
+            console.log('the response status code is: '+response.statusCode);
+          }
+        }
+      ); // end of user space available paren
+    } else { // if id doesnt exist
+      registerInfoMessage();
+      request.post(
+        HOST+'/createunreg', {
+          form: { start: 1 }
+        },
+        function (error, response, body) {
+          if(!error && response.statusCode == 200) {
+            fs.writeFileSync(WSEND_DIR+'/.id', body);
+            var size = util.inspect(fs.statSync(file).size);
+            var id = fs.readFileSync(WSEND_DIR+'/.id').toString().replace(/(\r\n|\n|\r)/gm,"");
+            // 
+            // start request for user space avaliable
+            //
+            request.post(
+              HOST+'/userspaceavailable', {
+                form: { uid: id,
+                        size: size
+                      }
+              },
+              function (error, response, body) {
+                if(!error && response.statusCode == 200) {
+                  var accountSizeAvailable = body;
+            // 
+            // end of request for user space available
+            //
+                    if (accountSizeAvailable === 'not enough space in your account for this transfer') {
+                      notEnoughSpaceErr();
+                    } else if(accountSizeAvailable === 'file is too big for your account size') { 
+                        filesizeTooLarge();
+                    } else {
+                        // 
+                        // start of file upload
+                        //
+
+                        var form = new FormData();
+                        var pace = require('pace')(parseInt(size));
+
+                        var i=0;
+                        var j=0;
+                        var reset = 0;
+                        var nextPiece=1;
+                        var steps = 12;
+                        var counter = 0;
+
+                        form.append('uid', id);
+                        form.append('filehandle', fs.createReadStream(file));
+
+                        var request = https.request({
+                          method: 'post',
+                          hostname: 'wsend.net',
+                          port: 443,
+                          path: '/upload_cli',
+                          headers: form.getHeaders()
+                        });
+                          
+                        var tr = through(function (chunk) {
+                          this.queue(chunk);
+                          i++;
+                          var c = 0;
+                          function output() {
+                            process.nextTick(function() {
+                              c++;
+                              if (parseInt(size) > 200) {
+                                if (counter < parseInt(size)) {
+                                  for (var k = 0; k < steps; k++){
+                                    pace.op();
+                                    counter++;
+                                  }
+                                }
+                              }
+                              request.write(chunk, function(){
+                                output();
+                              });
+                            });
+                          }
+                          if (c === 0) {
+                            output();
+                          }
+                        });
+
+                        request.on('response', function(res) {
+                          //res.setMaxListeners(0);
+                          res.on('data', function(chunk){
+                            pace.op(size);
+                            console.error(' ');
+                            console.log(chunk.toString());
+                            process.exit(0);
+                          });
+                        });
+
+                        form.pipe(tr);
+
+                        //
+                        // end of file upload
+                        //
+
+                    }
+
+                } else { // end of user space available brace
+                  console.log('the error is: '+error);
+                  console.log('the response status code is: '+response.statusCode);
                 }
-                if (c === 0) {
-                  output();
-                }
-              });
-
-              request.on('response', function(res) {
-                //res.setMaxListeners(0);
-                res.on('data', function(chunk){
-                  pace.op(size);
-                  console.error(' ');
-                  console.log(chunk.toString());
-                  process.exit(0);
-                });
-              });
-
-              form.pipe(tr);
-
-              //
-              // end of file upload
-              //
+              }
+            ); // end of user space available paren
 
           }
+        }
+      );
 
-      } else { // end of user space available brace
-        console.log('the error is: '+error);
-        console.log('the response status code is: '+response.statusCode);
-      }
-    }
-  ); // end of user space available paren
+    } // end of if id dosent exist
 
+  } else { // if directory doesnt exist
+    registerInfoMessage();
+    fs.mkdirSync(process.env.HOME+'/.wsend/', 0755);
+      request.post(
+        HOST+'/createunreg', {
+          form: { start: 1 }
+        },
+        function (error, response, body) {
+          if(!error && response.statusCode == 200) {
+            fs.writeFileSync(WSEND_DIR+'/.id', body);
+            var size = util.inspect(fs.statSync(file).size);
+            var id = fs.readFileSync(WSEND_DIR+'/.id').toString().replace(/(\r\n|\n|\r)/gm,"");
+            // 
+            // start request for user space avaliable
+            //
+            request.post(
+              HOST+'/userspaceavailable', {
+                form: { uid: id,
+                        size: size
+                      }
+              },
+              function (error, response, body) {
+                if(!error && response.statusCode == 200) {
+                  var accountSizeAvailable = body;
+            // 
+            // end of request for user space available
+            //
+                    if (accountSizeAvailable === 'not enough space in your account for this transfer') {
+                      notEnoughSpaceErr();
+                    } else if(accountSizeAvailable === 'file is too big for your account size') { 
+                        filesizeTooLarge();
+                    } else {
+                        // 
+                        // start of file upload
+                        //
 
+                        var form = new FormData();
+                        var pace = require('pace')(parseInt(size));
+
+                        var i=0;
+                        var j=0;
+                        var reset = 0;
+                        var nextPiece=1;
+                        var steps = 12;
+                        var counter = 0;
+
+                        form.append('uid', id);
+                        form.append('filehandle', fs.createReadStream(file));
+
+                        var request = https.request({
+                          method: 'post',
+                          hostname: 'wsend.net',
+                          port: 443,
+                          path: '/upload_cli',
+                          headers: form.getHeaders()
+                        });
+                          
+                        var tr = through(function (chunk) {
+                          this.queue(chunk);
+                          i++;
+                          var c = 0;
+                          function output() {
+                            process.nextTick(function() {
+                              c++;
+                              if (parseInt(size) > 200) {
+                                if (counter < parseInt(size)) {
+                                  for (var k = 0; k < steps; k++){
+                                    pace.op();
+                                    counter++;
+                                  }
+                                }
+                              }
+                              request.write(chunk, function(){
+                                output();
+                              });
+                            });
+                          }
+                          if (c === 0) {
+                            output();
+                          }
+                        });
+
+                        request.on('response', function(res) {
+                          //res.setMaxListeners(0);
+                          res.on('data', function(chunk){
+                            pace.op(size);
+                            console.error(' ');
+                            console.log(chunk.toString());
+                            process.exit(0);
+                          });
+                        });
+
+                        form.pipe(tr);
+
+                        //
+                        // end of file upload
+                        //
+
+                    }
+
+                } else { // end of user space available brace
+                  console.log('the error is: '+error);
+                  console.log('the response status code is: '+response.statusCode);
+                }
+              }
+            ); // end of user space available paren
+
+          }
+        }
+      );
+  } // end of directory doesnt exist
 };
 var sendFileNoProgress = function(file) {
-  var size = util.inspect(fs.statSync(file).size);
-  var id = fs.readFileSync(WSEND_DIR+'/.id').toString().replace(/(\r\n|\n|\r)/gm,"");
-  // 
-  // start request for user space avaliable
-  //
-  request.post(
-    HOST+'/userspaceavailable', {
-      form: { uid: id,
-              size: size
-            }
-    },
-    function (error, response, body) {
-      if(!error && response.statusCode == 200) {
-        var accountSizeAvailable = body;
-  // 
-  // end of request for user space available
-  //
-          if (accountSizeAvailable === 'not enough space in your account for this transfer') {
-            notEnoughSpaceErr();
-          } else if(accountSizeAvailable === 'file is too big for your account size') { 
-              filesizeTooLarge();
-          } else {
-              // 
-              // start of file upload
-              //
+  var exists = fs.existsSync(WSEND_DIR);
+  if (exists) {
 
-              var form = new FormData();
+    // directory exists, check to see if user is registered
+    var idExists = fs.existsSync(WSEND_DIR+'/.id');
+    if (idExists) {
+      var size = util.inspect(fs.statSync(file).size);
+      var id = fs.readFileSync(WSEND_DIR+'/.id').toString().replace(/(\r\n|\n|\r)/gm,"");
+      // 
+      // start request for user space avaliable
+      //
+      request.post(
+        HOST+'/userspaceavailable', {
+          form: { uid: id,
+                  size: size
+                }
+        },
+        function (error, response, body) {
+          if(!error && response.statusCode == 200) {
+            var accountSizeAvailable = body;
+      // 
+      // end of request for user space available
+      //
+              if (accountSizeAvailable === 'not enough space in your account for this transfer') {
+                notEnoughSpaceErr();
+              } else if(accountSizeAvailable === 'file is too big for your account size') { 
+                  filesizeTooLarge();
+              } else {
+                  request.post(
+                    HOST+'/usertype', {
+                      form: { uid: id }
+                    },
+                    function (error, response, body) {
+                      if(!error && response.statusCode == 200) {
+                        var userType = body;
+                        if (userType === 'free') {
+                          freeInfoMessage();
+                        } else if (userType === 'unregistered') {
+                          registerInfoMessage();
+                        } else if (userType === 'unknown') {
+                          unregisteredSignUp();
+                        }
+                        // 
+                        // start of file upload
+                        //
 
-              form.append('uid', id);
-              form.append('filehandle', fs.createReadStream(file));
+                        var form = new FormData();
 
-              var request = https.request({
-                method: 'post',
-                hostname: 'wsend.net',
-                port: 443,
-                path: '/upload_cli',
-                headers: form.getHeaders()
-              });
+                        form.append('uid', id);
+                        form.append('filehandle', fs.createReadStream(file));
 
-              request.on('response', function(res) {
-                //res.setMaxListeners(0);
-                res.on('data', function(chunk){
-                  console.log(chunk.toString());
-                  process.exit(0);
-                });
-              });
+                        var request = https.request({
+                          method: 'post',
+                          hostname: 'wsend.net',
+                          port: 443,
+                          path: '/upload_cli',
+                          headers: form.getHeaders()
+                        });
 
-              form.pipe(request);
+                        request.on('response', function(res) {
+                          //res.setMaxListeners(0);
+                          res.on('data', function(chunk){
+                            console.log(chunk.toString());
+                            process.exit(0);
+                          });
+                        });
 
-              //
-              // end of file upload
-              //
+                        form.pipe(request);
+
+                        //
+                        // end of file upload
+                        //
+                      }
+                    }
+                  );
+
+              }
+
+          } else { // end of user space available brace
+            console.log('the error is: '+error);
+            console.log('the response status code is: '+response.statusCode);
+          }
+        }
+      ); // end of user space available paren
+    } else { // if id doesnt exist
+      registerInfoMessage();
+      request.post(
+        HOST+'/createunreg', {
+          form: { start: 1 }
+        },
+        function (error, response, body) {
+          if(!error && response.statusCode == 200) {
+            fs.writeFileSync(WSEND_DIR+'/.id', body);
+            var size = util.inspect(fs.statSync(file).size);
+            var id = fs.readFileSync(WSEND_DIR+'/.id').toString().replace(/(\r\n|\n|\r)/gm,"");
+            // 
+            // start request for user space avaliable
+            //
+            request.post(
+              HOST+'/userspaceavailable', {
+                form: { uid: id,
+                        size: size
+                      }
+              },
+              function (error, response, body) {
+                if(!error && response.statusCode == 200) {
+                  var accountSizeAvailable = body;
+            // 
+            // end of request for user space available
+            //
+                    if (accountSizeAvailable === 'not enough space in your account for this transfer') {
+                      notEnoughSpaceErr();
+                    } else if(accountSizeAvailable === 'file is too big for your account size') { 
+                        filesizeTooLarge();
+                    } else {
+                        // 
+                        // start of file upload
+                        //
+
+                        var form = new FormData();
+
+                        form.append('uid', id);
+                        form.append('filehandle', fs.createReadStream(file));
+
+                        var request = https.request({
+                          method: 'post',
+                          hostname: 'wsend.net',
+                          port: 443,
+                          path: '/upload_cli',
+                          headers: form.getHeaders()
+                        });
+
+                        request.on('response', function(res) {
+                          //res.setMaxListeners(0);
+                          res.on('data', function(chunk){
+                            console.log(chunk.toString());
+                            process.exit(0);
+                          });
+                        });
+
+                        form.pipe(request);
+
+                        //
+                        // end of file upload
+                        //
+
+                    }
+
+                } else { // end of user space available brace
+                  console.log('the error is: '+error);
+                  console.log('the response status code is: '+response.statusCode);
+                }
+              }
+            ); // end of user space available paren
 
           }
+        }
+      );
 
-      } else { // end of user space available brace
-        console.log('the error is: '+error);
-        console.log('the response status code is: '+response.statusCode);
-      }
-    }
-  ); // end of user space available paren
+    } // end of if id dosent exist
 
+  } else { // if directory doesnt exist
+    registerInfoMessage();
+    fs.mkdirSync(process.env.HOME+'/.wsend/', 0755);
+      request.post(
+        HOST+'/createunreg', {
+          form: { start: 1 }
+        },
+        function (error, response, body) {
+          if(!error && response.statusCode == 200) {
+            fs.writeFileSync(WSEND_DIR+'/.id', body);
+            var size = util.inspect(fs.statSync(file).size);
+            var id = fs.readFileSync(WSEND_DIR+'/.id').toString().replace(/(\r\n|\n|\r)/gm,"");
+            // 
+            // start request for user space avaliable
+            //
+            request.post(
+              HOST+'/userspaceavailable', {
+                form: { uid: id,
+                        size: size
+                      }
+              },
+              function (error, response, body) {
+                if(!error && response.statusCode == 200) {
+                  var accountSizeAvailable = body;
+            // 
+            // end of request for user space available
+            //
+                    if (accountSizeAvailable === 'not enough space in your account for this transfer') {
+                      notEnoughSpaceErr();
+                    } else if(accountSizeAvailable === 'file is too big for your account size') { 
+                        filesizeTooLarge();
+                    } else {
+                        // 
+                        // start of file upload
+                        //
 
+                        var form = new FormData();
+
+                        form.append('uid', id);
+                        form.append('filehandle', fs.createReadStream(file));
+
+                        var request = https.request({
+                          method: 'post',
+                          hostname: 'wsend.net',
+                          port: 443,
+                          path: '/upload_cli',
+                          headers: form.getHeaders()
+                        });
+
+                        request.on('response', function(res) {
+                          //res.setMaxListeners(0);
+                          res.on('data', function(chunk){
+                            console.log(chunk.toString());
+                            process.exit(0);
+                          });
+                        });
+
+                        form.pipe(request);
+
+                        //
+                        // end of file upload
+                        //
+
+                    }
+
+                } else { // end of user space available brace
+                  console.log('the error is: '+error);
+                  console.log('the response status code is: '+response.statusCode);
+                }
+              }
+            ); // end of user space available paren
+
+          }
+        }
+      );
+  } // end of directory doesnt exist
 };
 
 exports.login = login;
