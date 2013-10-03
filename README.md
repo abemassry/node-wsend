@@ -53,7 +53,7 @@ wsend: The opposite of wget, for node
 
    *Get a referral link to send to people*
    
-     wsend --refer-link
+     wsend --referlink
      
 
 ## Pricing 
