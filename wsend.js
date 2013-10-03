@@ -18,7 +18,7 @@ var reset = 0;
 var nextPiece=1;
 var steps = 9;
 var counter = 0;
-var minProgressSize = 200000;
+var minProgressSize = 1000000;
 
 function freeInfoMessage() {
   console.error('\033[01;36m');
