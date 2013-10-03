@@ -1,0 +1,41 @@
+{
+  "name": "wsend",
+  "version": "0.0.1",
+  "description": "wsend: the opposite of wget",
+  "main": "wsend",
+  "dependencies": {
+    "pace": "~0.0.4",
+    "progress": "~1.1.0",
+    "form-data": "~0.1.1",
+    "request": "~2.27.0",
+    "commander": "~2.0.0",
+    "prompt": "~0.2.11",
+    "util": "~0.4.9",
+    "through": "~2.3.4"
+  },
+  "devDependencies": {},
+  "preferGlobal": "true",
+  "bin": {
+    "wsend" : "wsend"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/abemassry/node-wsend.git"
+  },
+  "keywords": [
+    "wsend",
+    "curl",
+    "wget",
+    "command",
+    "line",
+    "progress",
+    "upload"
+  ],
+  "author": "abemassry",
+  "license": "MIT",
+  "readmeFilename": "README.md",
+  "gitHead": "f975eb61759bc781ce8a329d0063825ab2011db8"
+}
