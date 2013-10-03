@@ -18,6 +18,7 @@ var reset = 0;
 var nextPiece=1;
 var steps = 9;
 var counter = 0;
+var minProgressSize = 200000;
 
 function freeInfoMessage() {
   console.error('\033[01;36m');
@@ -534,7 +535,7 @@ var sendFile = function(file) {
                           function output() {
                             process.nextTick(function() {
                               c++;
-                              if (parseInt(size) > 200) {
+                              if (parseInt(size) > minProgressSize) {
                                 if (counter < parseInt(size)) {
                                   for (var k = 0; k < steps; k++){
                                     pace.op();
@@ -640,7 +641,7 @@ var sendFile = function(file) {
                           function output() {
                             process.nextTick(function() {
                               c++;
-                              if (parseInt(size) > 200) {
+                              if (parseInt(size) > minProgressSize) {
                                 if (counter < parseInt(size)) {
                                   for (var k = 0; k < steps; k++){
                                     pace.op();
