@@ -1,6 +1,6 @@
 {
   "name": "wsend",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "wsend: the opposite of wget",
   "main": "wsend",
   "dependencies": {

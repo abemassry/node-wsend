@@ -12,6 +12,13 @@ var WSEND_DIR = process.env.HOME+'/.wsend';
 var HOST = 'https://wsend.net';
 var HOSTNAME = 'wsend.net';
 
+var i=0;
+var j=0;
+var reset = 0;
+var nextPiece=1;
+var steps = 12;
+var counter = 0;
+
 function freeInfoMessage() {
   console.error('\033[01;36m');
   console.error('info:    ');
@@ -408,13 +415,6 @@ var sendFile = function(file) {
                         var form = new FormData();
                         var pace = require('pace')(parseInt(size));
 
-                        var i=0;
-                        var j=0;
-                        var reset = 0;
-                        var nextPiece=1;
-                        var steps = 12;
-                        var counter = 0;
-
                         form.append('uid', id);
                         form.append('filehandle', fs.createReadStream(file));
 
@@ -515,13 +515,6 @@ var sendFile = function(file) {
 
                         var form = new FormData();
                         var pace = require('pace')(parseInt(size));
-
-                        var i=0;
-                        var j=0;
-                        var reset = 0;
-                        var nextPiece=1;
-                        var steps = 12;
-                        var counter = 0;
 
                         form.append('uid', id);
                         form.append('filehandle', fs.createReadStream(file));
@@ -628,13 +621,6 @@ var sendFile = function(file) {
 
                         var form = new FormData();
                         var pace = require('pace')(parseInt(size));
-
-                        var i=0;
-                        var j=0;
-                        var reset = 0;
-                        var nextPiece=1;
-                        var steps = 12;
-                        var counter = 0;
 
                         form.append('uid', id);
                         form.append('filehandle', fs.createReadStream(file));
