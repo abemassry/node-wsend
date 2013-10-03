@@ -458,6 +458,71 @@ var sendFile = function(file) {
 
 
 };
+var sendFileNoProgress = function(file) {
+  var size = util.inspect(fs.statSync(file).size);
+  var id = fs.readFileSync(WSEND_DIR+'/.id').toString().replace(/(\r\n|\n|\r)/gm,"");
+  // 
+  // start request for user space avaliable
+  //
+  request.post(
+    HOST+'/userspaceavailable', {
+      form: { uid: id,
+              size: size
+            }
+    },
+    function (error, response, body) {
+      if(!error && response.statusCode == 200) {
+        var accountSizeAvailable = body;
+  // 
+  // end of request for user space available
+  //
+          if (accountSizeAvailable === 'not enough space in your account for this transfer') {
+            notEnoughSpaceErr();
+          } else if(accountSizeAvailable === 'file is too big for your account size') { 
+              filesizeTooLarge();
+          } else {
+              // 
+              // start of file upload
+              //
+
+              var form = new FormData();
+
+              form.append('uid', id);
+              form.append('filehandle', fs.createReadStream(file));
+
+              var request = https.request({
+                method: 'post',
+                hostname: 'wsend.net',
+                port: 443,
+                path: '/upload_cli',
+                headers: form.getHeaders()
+              });
+
+              request.on('response', function(res) {
+                //res.setMaxListeners(0);
+                res.on('data', function(chunk){
+                  console.log(chunk.toString());
+                  process.exit(0);
+                });
+              });
+
+              form.pipe(request);
+
+              //
+              // end of file upload
+              //
+
+          }
+
+      } else { // end of user space available brace
+        console.log('the error is: '+error);
+        console.log('the response status code is: '+response.statusCode);
+      }
+    }
+  ); // end of user space available paren
+
+
+};
 
 exports.login = login;
 exports.checkInstall = checkInstall;
@@ -465,3 +530,4 @@ exports.register = register;
 exports.refer = refer;
 exports.referLink = referLink;
 exports.sendFile = sendFile;
+exports.sendFileNoProgress = sendFileNoProgress;

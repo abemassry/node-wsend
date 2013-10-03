@@ -12,6 +12,7 @@ program
   .option('-r, --register', 'Register')
   .option('-R, --refer', 'Refer')
   .option('-L, --referlink', 'Refer Link')
+  .option('-p, --noprogress', 'No Progress Bar')
   .parse(process.argv);
 
 if (program.login) {
@@ -22,6 +23,8 @@ if (program.login) {
   wsend.refer(process.argv[3]);
 } else if (program.referlink) { 
   wsend.referLink();
+} else if (program.noprogress) { 
+  wsend.sendFileNoProgress(process.argv[3]);
 } else {
   if (process.argv[2]) {
     wsend.sendFile(process.argv[2]);
@@ -29,11 +32,15 @@ if (program.login) {
     
     console.error("\033[01;31m");
     console.error('error:   ');
+    console.error('error:   Usage: '+process.argv[1]+' <file>');
+    console.error('error:   Usage: '+process.argv[1]+' --noprogress <file>');
     console.error('error:   Usage: '+process.argv[1]+' [-l|--login] [-r|--register]');
-    console.error('error:   Usage: [--refer friend@example.com]');
+    console.error('error:   Usage: [--refer] friend@example.com');
     console.error('error:   Usage: [--refer-link]');
     console.error('error:   or send a file, example:');
     console.error('error:   '+process.argv[1]+' file.txt');
+    console.error('error:   or without progress bar, example:');
+    console.error('error:   '+process.argv[1]+' -p file.txt');
     console.error('error:   ');
     console.error("\033[00m");
   }
