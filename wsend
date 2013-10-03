@@ -24,8 +24,7 @@ if (program.login) {
   wsend.referLink();
 } else {
   if (process.argv[2]) {
-    console.log('the file that will be uploaded here is: ');
-    console.log(process.argv[2]);
+    wsend.sendFile(process.argv[2]);
   } else {
     
     console.error("\033[01;31m");
